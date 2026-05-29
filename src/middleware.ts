@@ -35,8 +35,12 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  if ((isBusinessRoute || isAdminRoute) && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (
+    isBusinessRoute &&
+    session?.user.role !== "SUPER_ADMIN" &&
+    !session?.user.businessId
+  ) {
+    return NextResponse.redirect(new URL("/onboarding", req.url));
   }
 
   if (isAdminRoute && session?.user.role !== "SUPER_ADMIN") {
