@@ -2,6 +2,7 @@ import type { NextAuthConfig } from "next-auth";
 import type { UserRole } from "@/generated/prisma/client";
 
 export const authConfig: NextAuthConfig = {
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || (process.env.NODE_ENV === "production" ? undefined : "dev-secret-key-12345"),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
