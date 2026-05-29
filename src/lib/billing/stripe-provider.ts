@@ -1,3 +1,4 @@
+import type { PlanTier } from "@/generated/prisma/client";
 import type {
   CheckoutSessionInput,
   CheckoutSessionResult,
@@ -11,8 +12,6 @@ import type {
  * - STRIPE_SECRET_KEY
  * - STRIPE_PRICE_BASIC / STRIPE_PRICE_PRO / STRIPE_PRICE_BUSINESS
  * - STRIPE_WEBHOOK_SECRET (for /api/webhooks/payments)
- *
- * Install: npm install stripe
  */
 export class StripeBillingProvider implements IBillingProvider {
   readonly name = "stripe";
@@ -30,32 +29,28 @@ export class StripeBillingProvider implements IBillingProvider {
   ): Promise<CheckoutSessionResult> {
     this.assertConfigured();
 
-    // Uncomment after `npm install stripe`:
-    //
-    // const Stripe = (await import("stripe")).default;
-    // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-    // const priceId = this.getPriceId(input.planTier);
-    // const session = await stripe.checkout.sessions.create({
-    //   mode: "subscription",
-    //   customer_email: undefined,
-    //   line_items: [{ price: priceId, quantity: 1 }],
-    //   success_url: input.successUrl,
-    //   cancel_url: input.cancelUrl,
-    //   metadata: { businessId: input.businessId, planTier: input.planTier },
-    // });
-    // return { sessionId: session.id, url: session.url! };
-
-    throw new Error(
-      "Stripe provider stub: install stripe package and uncomment implementation in stripe-provider.ts"
-    );
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const priceId = this.getPriceId(input.planTier);
+    
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer_email: undefined,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      metadata: { businessId: input.businessId, planTier: input.planTier },
+    });
+    
+    return { sessionId: session.id, url: session.url! };
   }
 
-  // private getPriceId(planTier: PlanTier): string {
-  //   const map = {
-  //     BASIC: process.env.STRIPE_PRICE_BASIC!,
-  //     PRO: process.env.STRIPE_PRICE_PRO!,
-  //     BUSINESS: process.env.STRIPE_PRICE_BUSINESS!,
-  //   };
-  //   return map[planTier];
-  // }
+  private getPriceId(planTier: PlanTier): string {
+    const map = {
+      BASIC: process.env.STRIPE_PRICE_BASIC!,
+      PRO: process.env.STRIPE_PRICE_PRO!,
+      BUSINESS: process.env.STRIPE_PRICE_BUSINESS!,
+    };
+    return map[planTier];
+  }
 }

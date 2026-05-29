@@ -12,6 +12,59 @@ const webhookSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const stripeSignature = request.headers.get("stripe-signature");
+
+  // Flow A: Real Stripe webhook signature verification
+  if (stripeSignature) {
+    try {
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+      const bodyText = await request.text();
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
+      const event = stripe.webhooks.constructEvent(
+        bodyText,
+        stripeSignature,
+        webhookSecret
+      );
+
+      // Create payment event log in DB
+      const dbEvent = await prisma.paymentEvent.create({
+        data: {
+          eventType: event.type,
+          payload: event as any,
+          provider: "stripe",
+        },
+      });
+
+      // Handle checkout.session.completed event
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object as any;
+        const businessId = session.metadata?.businessId;
+        const planTier = session.metadata?.planTier as PlanTier;
+
+        if (businessId && planTier) {
+          // Log business details in payment event
+          await prisma.paymentEvent.update({
+            where: { id: dbEvent.id },
+            data: {
+              businessId,
+              processedAt: new Date(),
+            },
+          });
+
+          await subscriptionService.upgradePlan(businessId, planTier);
+        }
+      }
+
+      return jsonOk({ received: true });
+    } catch (err: any) {
+      console.error("Stripe Webhook Signature Verification Failed:", err.message);
+      return jsonError(`Webhook Error: ${err.message}`, 400);
+    }
+  }
+
+  // Flow B: Mock/Fallback payments flow (used in local testing / mock mode)
   const secret = request.headers.get("x-webhook-secret");
   if (secret !== process.env.WEBHOOK_SECRET && process.env.NODE_ENV === "production") {
     return jsonError("Unauthorized", 401);
@@ -32,6 +85,7 @@ export async function POST(request: Request) {
         eventType: type,
         payload: body,
         processedAt: new Date(),
+        provider: "mock",
       },
     });
 
@@ -41,7 +95,7 @@ export async function POST(request: Request) {
 
     return jsonOk({ received: true, sessionId });
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error("Mock Webhook processing error:", error);
     return jsonError("Webhook processing failed", 500);
   }
 }
