@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlowChat — WhatsApp Business Automation SaaS
 
-## Getting Started
+Multi-tenant MVP for appointments, customers, and WhatsApp messaging.
 
-First, run the development server:
+## Stack
 
-```bash
+- Next.js 16 (App Router) + TypeScript
+- PostgreSQL + Prisma 7
+- NextAuth (Credentials)
+- Tailwind CSS 4
+
+## Quick start
+
+| Goal | Guide |
+|------|--------|
+| **Deploy live for clients** | [docs/DEPLOY_LIVE.md](../docs/DEPLOY_LIVE.md) |
+| Run on your PC (optional) | [docs/GETTING_STARTED.md](../docs/GETTING_STARTED.md) |
+
+```powershell
+cd whatsapp-saas
+docker compose up -d
+Copy-Item .env.example .env
+# Edit .env — set NEXTAUTH_SECRET (see GETTING_STARTED.md)
+npm install
+npx prisma db push
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo accounts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role        | Email              | Password  |
+|-------------|--------------------|-----------|
+| Super admin | admin@flowchat.app | admin123  |
+| Business    | owner@demo.com     | demo1234  |
 
-## Learn More
+## Features
 
-To learn more about Next.js, take a look at the following resources:
+- Multi-tenant businesses with isolated data
+- Customers + appointments CRUD
+- WhatsApp confirmations & reminders (mock or Meta)
+- Plan limits (Basic / Pro / Business)
+- Mock or Stripe billing structure
+- Super admin tenant management
+- Automated reminders cron (`/api/cron/reminders`)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Test reminders cron
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+With dev server running:
 
-## Deploy on Vercel
+```bash
+npm run cron:reminders
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run db:seed` | Seed demo data |
+| `npm run cron:reminders` | Run reminder job locally |
+| `npm run docker:up` | Start Postgres |
+
+## Provider switching
+
+| Env | Values |
+|-----|--------|
+| `MESSAGING_PROVIDER` | `mock` (default), `meta` |
+| `BILLING_PROVIDER` | `mock` (default), `stripe` |
+
+See [docs/NEXT_STEPS.md](../docs/NEXT_STEPS.md) for Meta + Stripe setup.
+
+## Deploy (Vercel)
+
+1. Push to GitHub
+2. Import in Vercel, set root to `whatsapp-saas`
+3. Add env vars from `.env.example`
+4. Use [Neon](https://neon.tech) for `DATABASE_URL`
+5. Cron runs daily via `vercel.json` (set `CRON_SECRET` in Vercel)
+
+## Project docs
+
+- **[Getting Started](../docs/GETTING_STARTED.md)** — run locally, deploy, checklist
+- [Next Steps Roadmap](../docs/NEXT_STEPS.md)
+- [MVP Architecture](../docs/MVP-ARCHITECTURE.md)

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: flowchat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flowchat
+      POSTGRES_PASSWORD: flowchat
+      POSTGRES_DB: flowchat
+    ports:
+      - "5432:5432"
+    volumes:
+      - flowchat_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowchat -d flowchat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  flowchat_pgdata:
