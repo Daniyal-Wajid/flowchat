@@ -41,6 +41,24 @@ export class WhatsAppService {
         where: { id: appointmentId },
         data: { confirmedAt: new Date(), status: "CONFIRMED" },
       });
+
+      if (this.provider.name !== "mock") {
+        await prisma.messageLog.create({
+          data: {
+            businessId,
+            customerId: appointment.customerId,
+            appointmentId: appointment.id,
+            type: "CONFIRMATION",
+            toPhone: appointment.customer.phone,
+            body,
+            status: "SENT",
+            provider: this.provider.name,
+            externalId: result.externalId,
+            sentAt: new Date(),
+            direction: "OUTBOUND",
+          },
+        });
+      }
     }
 
     return result;
@@ -77,6 +95,24 @@ export class WhatsAppService {
         where: { id: appointmentId },
         data: { reminderSentAt: new Date() },
       });
+
+      if (this.provider.name !== "mock") {
+        await prisma.messageLog.create({
+          data: {
+            businessId,
+            customerId: appointment.customerId,
+            appointmentId: appointment.id,
+            type: "REMINDER",
+            toPhone: appointment.customer.phone,
+            body,
+            status: "SENT",
+            provider: this.provider.name,
+            externalId: result.externalId,
+            sentAt: new Date(),
+            direction: "OUTBOUND",
+          },
+        });
+      }
     }
 
     return result;
@@ -111,6 +147,23 @@ export class WhatsAppService {
 
     if (result.success) {
       await subscriptionService.incrementMessageCount(params.businessId);
+
+      if (this.provider.name !== "mock") {
+        await prisma.messageLog.create({
+          data: {
+            businessId: params.businessId,
+            customerId: params.customerId,
+            type: "MANUAL",
+            toPhone: customer.phone,
+            body,
+            status: "SENT",
+            provider: this.provider.name,
+            externalId: result.externalId,
+            sentAt: new Date(),
+            direction: "OUTBOUND",
+          },
+        });
+      }
     }
 
     return result;
